@@ -1,0 +1,141 @@
+% Skrypt obliczający pole ograniczone dwoma krzywymi.
+%
+% Mamy dwie, przecinające się, krzywe, będące wykresami funkcji y = f1(x) oraz
+% y = f2(x). Mamy narysować te dwie krzywe, znaleźć miejsca przecięcia, pokazać
+% powierzchnię jaki obejmują, obliczyć pole tej powierzchni.
+
+% Funkcje możemy zdefiniować rozmaicie (np. w osobnych plikach), ale najprościej
+% - jeżeli nie są zbyt skomplikowane - użyć funkcji anonimowych @(x).
+%
+% Jeżeli będzie to potrzebne - można będzie łatwo zmienić definicje - są one
+% w jednym miejscu, obok siebie.
+
+f1 = @(x)   1 ./ x - 2;
+f2 = @(x)   -(x-1).^2 + 14;
+
+% Zakres wykresu jaki chcemy zrobić można byłoby wpisać wprost w polecenia
+% rysowania, ale jeżeli zapiszemy go w zmiennych, to będziemy mogli używać
+% go nie tylko do rysowania, ale także do obliczeń. W dodatku łatwiej będzie
+% zmienić ten zakres w razie potrzeby - bo umieszczamy go na początku skryptu.
+% Podajemy też liczbę punktów jakie mają posłużyć do narysowania krzywych:
+% jeżeli będzie ona dostatecznie duża (np. 1000 lub 10000), to rysowane linie
+% będą wyglądały jakby były gładkimi krzywymi.
+
+a = 0.01;  % najmniejsza wartość x na wykresie
+b = 5.0;      % największa wartość x na wykresie
+N = 1000;   % liczba punktów
+
+% Tworzymy ciąg wartości x wypełniających przedział od a do b.
+% Uwaga: jeżeli oś x (na wykresach) miałaby być logarytmiczna, to lepiej zamiast
+% linspace jest użyć logspace.
+
+x = linspace(a, b, N);
+
+% Wywołani figure i clf nie jest konieczne. Ale ułatwia pracę: nie trzeba będzie
+% szukać okienka z wykresem (samo wyskoczy na wierzch) i (dzięki clf) będziemy
+% mieć pewność że zaczynamy rysowanie "od pustej kartki".
+
+figure(1);
+clf;
+
+% Rysujemy jedną z funkcji - plot dostaje wektor odciętych x i wektor rzędnych
+% obliczony wywołaniem f1(x).
+
+plot(x, f1(x));
+
+% Upiększanie wykresu - dodawanie siatek ułatwiających odczyt. 
+
+grid on;
+grid minor;
+
+% nazwanie osi i tytuł wukresy
+xlabel('x');
+ylabel('y');
+title('Prezentacja pola miedzy wykresami');
+ 
+
+% Włączenie pozostawiania już narysowanego wykresu - bez tego kolejne wywołania
+% funkcji takich jak plot wymazują poprzednią zawartość. Uwaga: jeżeli hold on
+% użyjemy zbyt wcześnie, zanim powstanie rysunek, to może to nie zadziałać.
+% Dlatego najpierw coś rysujemy, potem dajemy hold on, potem rysujemy dalej.
+
+hold on;
+
+% Rysowanie drugiej funkcji. Ponieważ było hold on to wszystkie ustawienia,
+% siatki itp. pozostają bez zmian. Automatycznie zmienia się natomiast kolor
+% linii wykresu. (W starszych wersjach Matlaba ten efekt uzyskiwało się
+% poleceniem hold all, obecnie nie ma różnicy pomiędzy hold on i hold all.)
+
+plot(x, f2(x));
+
+
+% Teraz szukamy punktów przecięcia. Zakładamy że są i że są dwa i tylko dwa.
+% To może ogólnie nie zachodzić, ale po prostu tym razem wiemy że tak ma być.
+
+% Tworzymy funkcję f21, która przyjmuje wartość zero w punktach przecięcia,
+% czyli wtedy gdy f2(x) == f1(x)
+
+f21 = @(x) f2(x) - f1(x);
+
+% Cały przedział (a, b) mamy podzielony na wiele małych odcinków. Zamiast szukać
+% miejsca zerowego funkcji f21 w całym przedziale (a, b) szukamy go kolejno 
+% w każdym małym odcinku (x(i), x(i+1)). Najczęściej nam się to zapewne nie uda
+% - wywołanie fzero będzie zgłaszało błąd. My jednak ten błąd przechytujemy
+% i wygaszamy dzięki try-catch-end.
+
+% Najpierw szukamy od lewej do prawej - czyli gdy znajdziemy miejsce przecięcia
+% f1 i f2, to będzie to te które na wykresie jest po lewej stronie. Zapamiętamy
+% je jako xL i przerwiemy dalsze poszukiwania.
+
+for i = 1:(N-1)
+    try
+        xL = fzero(f21, [x(i), x(i+1)]);
+        break
+    catch
+    end
+end
+
+% Potem zrobimy to samo, ale będziemy szukać od prawej do lewej, zapisując w xR.
+
+for i = N:-1:2
+    try
+        xR = fzero(f21, [x(i-1), x(i)]);
+        break
+    catch
+    end
+end
+
+
+% Mamy już punkty przecięcia, możemy wypełnić obszar obejmowany przez krzywe.
+% Użyjemy do tego poleceni fill. Dlatego potrzebujemy ciągu punktów opisujących
+% wypełniany kontur. Utworzymy go łącząc punkty na krzywej f2 z punktami na
+% krzywej f1. Ale uwaga: musimy zadbać o odpowiednią kolejność - stąd polecenie
+% flip przestawiające w odwrotnej kolejności (malejącej) elementy wektora.
+
+xLR = linspace(xL, xR, N);  % x do lewej do prawej w przedziale (xL, xR)
+xRL = flip(xLR);            % x od prawej do lewej w przedziale (xL, xR)
+
+yLR = f2(xLR);  % od lewej do prawej (rosnące x) idziemy po krzywej f2
+yRL = f1(xRL);  % od prawej do lewej (malejące x) idziemy po krzywej f1
+
+% Scalamy dwa ciągi punktów w jeden, tworząc krzywą zamkniętą.
+
+xi = [xLR, xRL];
+yi = [yLR, yRL];
+
+% Mając punkty (xi, yi) zamalowujemy odpowiednim kolorem (wybraliśmy żółty,
+% czyli 'y') obszar jaki obejmuje łamana poprowadzona przez te punkty.
+
+fill(xi, yi, 'y');
+
+% Pozostaje obliczyć pole powierzchni, czyli całkę z f2(x) - f1(x) w przedziale
+% od xL do xR. Ogólnie: całki to zaawansowany i trudny temat. Jednakże Matlab
+% pozwala obliczyć numerycznie wartość całek zupełnie prosto - wystarczy wywołać
+% odpowiednie polecenie (tu quadgk) wstawiając jako parametry funkcję oraz
+% potrzebny zakres od do.
+%
+% Aby otrzymać na ekranie wynik nie obcięty do czterech cyfr znaczących używamy
+% polecenia format long.
+
+format long;
+quadgk(f21, xL, xR)
