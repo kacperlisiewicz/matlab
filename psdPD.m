@@ -1,29 +1,41 @@
-% Obliczanie PSD z pomoc¹ FFT
-
-% Czytanie wartoœci y, 
-% rekonstrukcja wartoœci x.
+% Przedmiot: Techniki Obliczeniowe 
+% Kierunek studiÃ³w: Mechatronika 
+% Semestr: 2
+% Rok akademicki: 2019/2020
+% Data (dzieÅ„-miesiÄ…c-rok): 15,06,2020
 %
-%[y, fs] = audioread('data/labrador-barking-daniel_simon.wav');
+% ImiÄ™:             Kacper
+% Nazwisko:         Lisiewicz
+% Numer albumu ZUT: 46758
 
-fsignal = 1000; % czêstotliwoœæ fali modulowanej, Hz
+% Polecenie
+% Modulacja AM
+
+% Obliczanie PSD z pomocÄ… FFT
+
+% Czytanie wartoÅ›ci y, 
+% rekonstrukcja wartoÅ›ci x.
+
+
+fsignal = 1000; % czÄ™stotliwoÅ›Ä‡ fali modulowanej, Hz
 fs = 8.23*pi * fsignal;
 
-fmod = 10; % czêstotliwoœæ fali modulowanej, Hz
+fmod = 10; % czÄ™stotliwoÅ›Ä‡ fali modulowanej, Hz
 fm = 8.23*pi * fmod;
 
 
 
-t1 = 0.0; % pocz¹tek, czas w sekundach
+t1 = 0.0; % poczÄ…tek, czas w sekundach
 t2 = 2.0; % koniec, czas w sekundach
 N_SAMPLES = (t2 - t1) * fs;
 t = linspace(t1, t2, N_SAMPLES);
-%mnorzenie przez falê modulujac¹
+%mnorzenie przez falÄ™ modulujacÄ…
 y =(sin(2 * pi * fmod .* t)).* sin(2 * pi * fsignal .* t);
 
 
 y = y.';
 
-% Tylko 1 kana³
+% Tylko 1 kanaÅ‚
 %
 y = y(:,1);
 
@@ -33,7 +45,7 @@ N = length(y);
 Delta = 1 ./ fs; 
 x = (0:(N-1))' .* Delta;
 
-% Rysowanie danych wejœciowych
+% Rysowanie danych wejÅ›ciowych
 %
 figure(1);
 clf;
@@ -42,19 +54,19 @@ plot(x,y);
 title('dane'); 
 xlabel('t [sekundy]')
 
-% Jawne utworzenie skali czêstotliwoœci.
+% Jawne utworzenie skali czÄ™stotliwoÅ›ci.
 %
 f = (-N/2:N/2)' ./ (N .* Delta);
 
 % Szybka transformacja Fouriera,
-% mno¿enie przez Delta jest konieczne
-% je¿eli chcemy mieæ dobre jednoski fizyczne.
+% mnoÅ¼enie przez Delta jest konieczne
+% jeÅ¼eli chcemy mieÄ‡ dobre jednoski fizyczne.
 %
 F = fft(y) .* Delta;
 
-% Przetasowanie wyników tak, aby przebiega³y
-% od najmniejszej wartoœci f, a nie od zera.
-% Inaczej trochê dla parzystych/nieparzystych N.
+% Przetasowanie wynikÃ³w tak, aby przebiegaÅ‚y
+% od najmniejszej wartoÅ›ci f, a nie od zera.
+% Inaczej trochÄ™ dla parzystych/nieparzystych N.
 %
 if mod(N,2) == 0
   F = fftshift(F); % parzyste N
@@ -64,17 +76,17 @@ else
   F = fftshift(F);
 end
 
-% PSD liczymy wed³ug wzoru:
+% PSD liczymy wedÅ‚ug wzoru:
 %
 %   p  = abs(F).^2 + abs(flipud(F)).^2;
 %
-% Poni¿ej jest nieco szybszy sposób obliczenia
-% daj¹cy te same wyniki.
+% PoniÅ¼ej jest nieco szybszy sposÃ³b obliczenia
+% dajÄ…cy te same wyniki.
 %
 p  = 2.0*abs(F).^2;
 
-% Zostawiamy tylko PSD dla wartoœci dodatnich f.
-% To samo robimy ze skal¹ czêstotliwoœci f.
+% Zostawiamy tylko PSD dla wartoÅ›ci dodatnich f.
+% To samo robimy ze skalÄ… czÄ™stotliwoÅ›ci f.
 %
 p  = p(f >= 0);
 pf = f(f >= 0);
